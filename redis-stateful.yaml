@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+  namespace: demo
+spec:
+  selector:
+    matchLabels:
+      app: redis
+  serviceName: "redis"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:6.2.6-alpine
+        command:
+          - redis-server
+#          - "/redis-master/redis.conf"
+        # env:
+        # - name: MASTER
+        #   value: "true"
+        ports:
+        - containerPort: 6379
+          name: redis
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "200Mi"
+        volumeMounts:
+        - mountPath: /data
+          name: config
+        # - mountPath: /redis-master
+        #   name: config
+      volumes:
+        # - name: data
+        #   emptyDir: {}
+        - name: config
+          configMap:
+            name: k8-redis-config
+            items:
+            - key: redis-config
+              path: dir  
+  volumeClaimTemplates:
+  - metadata: 
+      name: config
+    spec: 
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "gp2"
+      resources:
+        requests:
+          storage: 2Gi
+ 
